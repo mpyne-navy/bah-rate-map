@@ -27,7 +27,7 @@ us_dod_mha-detail-heavy.topo.json: us_zcta500-wbah-simplified.topo.json $(TOPOME
 	$(TOPOMERGE) us_dod_mha=us_zcta500.geo -o $@ -k 'd.properties.DOD_BAH_MHA' $<
 
 us_zcta500-simplified.topo.json: us_zcta500.topo.json $(TOPOSIMPLIFY)
-	$(TOPOSIMPLIFY) -o $@ -F -P 0.05 $<
+	$(TOPOSIMPLIFY) -o $@ -F -P 0.02 $<
 
 us_zcta500-wbah-simplified.topo.json: us_zcta500-simplified.topo.json sorted_zipmha23.txt $(IMPUTE_RATES)
 	$(IMPUTE_RATES) $< $@
