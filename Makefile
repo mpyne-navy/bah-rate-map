@@ -23,7 +23,7 @@ all: us_dod_mha.topo.json
 serve: index.html all bahwo23.txt bahw23.txt
 	python3 -m http.server
 
-us_dod_mha-detail.topo.json: us_zcta500-wbah-simplified.topo.json $(TOPOMERGE)
+us_dod_mha-detail-heavy.topo.json: us_zcta500-wbah-simplified.topo.json $(TOPOMERGE)
 	$(TOPOMERGE) us_dod_mha=us_zcta500.geo -o $@ -k 'd.properties.DOD_BAH_MHA' $<
 
 us_zcta500-simplified.topo.json: us_zcta500.topo.json $(TOPOSIMPLIFY)
@@ -34,6 +34,9 @@ us_zcta500-wbah-simplified.topo.json: us_zcta500-simplified.topo.json sorted_zip
 
 us_dod_mha.topo.json: us_dod_mha-detail.topo.json $(TOPOQUANTIZE)
 	$(TOPOQUANTIZE) -o $@ 10000 $<
+
+us_dod_mha-detail.topo.json: us_dod_mha-detail-heavy.topo.json strip-zctas.js
+	node strip-zctas.js $< $@ us_zcta500.geo
 
 us_zcta500.topo.json: us_zcta500.geo.json $(GEO2TOPO)
 	$(GEO2TOPO) -o $@ $<
