@@ -2,7 +2,7 @@
 
 use v5.30;
 use autodie;
-use JSON::XS;
+use JSON::PP;
 
 my %mha_assigns;
 my %used_zip_codes;
