@@ -53,10 +53,12 @@ before hand.
 To do this, first make sure you [have the dependencies you
 need](#dependencies), then:
 
-* Go to https://www2.census.gov/geo/tiger/GENZ2018/shp/ and download the
-  cb\_2018\_us\_zcta510\_500k.zip file (at the bottom of the list) and save it
-  into the directory you downloaded this repository to. This is the Census ZCTA
-  shapes we will process.
+* Download [the 2020 Census ZCTA data](https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_zcta520_500k.zip)
+  and save it into the directory you downloaded this repository to. These are
+  the Census ZCTA shapes we will process.
+    * However if you have the "wget" tool you can let the "Make" command
+      download this for you when it runs later, if you will have Internet
+      access where "Make" runs.
 * Go to https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/
   and in the "All BAH Rates" section download the "ASCII" file type version of the
   BAH rates for the year you care about (2023 in my case). Save it to the same location
@@ -81,6 +83,7 @@ local web server to see the results:
 
 * [NodeJS](https://nodejs.org/)
 * Make (likely available in your Linux distribution already)
+* Wget (likely available in your Linux distribution already; optional to download Census data)
 * Unzip (likely available in your Linux distribution already, provided by InfoZIP)
 * [Perl](https://www.perl.org/) (to copy over MHA data into the geographic data... will be rewritten later to use Python or NodeJS).
 * [Python](https://www.python.org/) (if you want to run `make serve`). It's probably already on your Linux install.

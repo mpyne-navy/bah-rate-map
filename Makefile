@@ -5,8 +5,9 @@
 #   * ogr2ogr (from GDAL),
 #   * Perl interpreter installed
 #   * Python3 installed (if you want "make serve" to work)
-# You must download cb_2018_us_zcta510_500k.zip from U.S. Census Bureau
-#   (see https://www2.census.gov/geo/tiger/GENZ2018/shp/)
+# You must download cb_2020_us_zcta520_500k.zip from U.S. Census Bureau,
+#   https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_zcta520_500k.zip
+#   (the Makefile will download it if you have wget)
 # You must download DoD BAH Rates for 2023 (in ASCII file type).
 #   (see https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/)
 
@@ -41,15 +42,21 @@ us_dod_mha-detail.topo.json: us_dod_mha-detail-heavy.topo.json strip-zctas.js
 us_zcta500.topo.json: us_zcta500.geo.json $(GEO2TOPO)
 	$(GEO2TOPO) -o $@ $<
 
-us_zcta500.geo.json: cb_2018_us_zcta510_500k.shp cb_2018_us_zcta510_500k.shx cb_2018_us_zcta510_500k.dbf
+us_zcta500.geo.json: cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf
 	ogr2ogr -f GeoJSON $@ $<
 
+# Needed NPM packages
 $(GEO2TOPO) $(TOPOMERGE) $(TOPOQUANTIZE) $(TOPOSIMPLIFY): package.json
 	npm install
 
-cb_2018_us_zcta510_500k.shp cb_2018_us_zcta510_500k.shx cb_2018_us_zcta510_500k.dbf: cb_2018_us_zcta510_500k.zip
+# Census data
+cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf: cb_2020_us_zcta520_500k.zip
 	unzip -DD -n $< $@
 
+cb_2020_us_zcta520_500k.zip:
+	wget https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_zcta520_500k.zip
+
+# BAH MHA data
 sorted_zipmha23.txt bahw23.txt bahwo23.txt: BAH-ASCII-2023.zip
 	unzip -DD -n $< $@
 

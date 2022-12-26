@@ -43,7 +43,7 @@ my $upd_count = 0; # count imputations we make for comparison
 say scalar @$obj_db, " objects in GEO DB";
 
 for my $geometry (@$obj_db) {
-    my $geoZCTA = $geometry->{properties}->{GEOID10}; # This is the 5-digit ZIP code as text
+    my $geoZCTA = $geometry->{properties}->{GEOID20}; # This is the 5-digit ZIP code as text
     my $mha = $used_zip_codes{$geoZCTA} // '';
     if ($mha) {
         $geometry->{properties}->{"DOD_BAH_MHA"} = $mha;
@@ -55,6 +55,10 @@ for my $geometry (@$obj_db) {
 }
 
 say "Made $upd_count updates to the output GEO DB";
+
+die "Something must have gone wrong, did a property name change like GEOID?"
+    unless $upd_count > 0;
+
 say scalar keys %used_zip_codes, " ZIP codes not used in any ZCTA entry";
 my @non_fake_zips = grep { $used_zip_codes{$_} !~ /^ZZ/ } keys %used_zip_codes;
 say "\t of these, ", scalar @non_fake_zips, " were not artificial MHAs";
