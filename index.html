@@ -54,25 +54,25 @@
 
 <div id="mha_label">Hover the map to see</div>
 
-<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3.v7.min.js" charset="utf-8"></script>
 <script src="https://d3js.org/topojson.v1.min.js"></script>
 <script>
 
 var width = 1080,
     height = 800;
 
-var projection = d3.geo.albersUsa()
+var projection = d3.geoAlbersUsa()
     .scale(1400)
     .translate([width / 2, height / 2]);
 
-var path = d3.geo.path()
+var path = d3.geoPath()
     .projection(projection);
 
 var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-var scale = d3.scale.linear()
+var scale = d3.scaleLinear()
     .domain([500, 5000])  // TODO: Set range based on input table.
     .range(["gray", "#8F8"]);
 
@@ -84,7 +84,6 @@ var wdepn_rate_tbl = null;
 var nodepn_rate_tbl = null;
 var use_depns = false;
 var selected_rate_col = 0;
-var map_loaded = false;
 
 function updateRates()
 {
@@ -105,39 +104,38 @@ function updateRates()
       .style("fill", d => scale(d.rate));
 }
 
-function check_loading_banner()
+function remove_loading_banner()
 {
-  if(map_loaded && wdepn_rate_tbl && nodepn_rate_tbl) {
-    d3.select("#loading_banner").remove();
-    console.log("All data loaded");
-    updateRates();
-  }
+  d3.select("#loading_banner").remove();
+  updateRates();
 }
 
-d3.json("us_dod_mha.topo.json", function(error, us) {
-  if (error) throw error;
-
+var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
   var props = function(d) {
     return d.id || d.properties.DOD_BAH_MHA;
   }
 
   var lastDivHovered = null;
 
-  var showMHA = function(mha_feature) {
-    var id = props(mha_feature);
+  var showMHA = function(ev, d) {
+    var mha_feature = d3.select(this);
+    var mha_elem = mha_feature.datum();
+    var id = props(mha_elem);
     var svg_id = '#path-' + id;
-    var hoverText = mha_feature.rate ? `${id}: \$${mha_feature.rate}` : id;
+    var hoverText = mha_elem.rate ? `${id}: \$${mha_elem.rate}` : id;
 
     d3.select("#mha_label").text(hoverText);
-    d3.select(svg_id).classed("hovered", true);
+    mha_feature.classed("hovered", true);
   };
 
-  var hideMHA = function(mha_feature) {
-    var id = props(mha_feature);
+  var hideMHA = function(ev, d) {
+    var mha_feature = d3.select(this);
+    var mha_elem = mha_feature.datum();
+    var id = props(mha_elem);
     var svg_id = '#path-' + id;
 
     d3.select("#mha_label").text('Hover to see');
-    d3.select(svg_id).classed("hovered", false);
+    mha_feature.classed("hovered", false);
   };
 
   var pickBG = function(mha_feature) {
@@ -160,9 +158,6 @@ d3.json("us_dod_mha.topo.json", function(error, us) {
       .on("mousemove", showMHA)
       .on("mouseout", hideMHA);
 
-  map_loaded = true;
-  check_loading_banner();
-
 //  svg.append("path")
 //      .datum(topojson.mesh(us, us.objects.us_dod_mha, function(a, b) { return a !== b; }))
 //      .attr("class", "state-boundary")
@@ -170,37 +165,32 @@ d3.json("us_dod_mha.topo.json", function(error, us) {
 });
 
 // no header row, send request manually
-d3.text("bahw23.txt", (error, ratetab) => {
-  if(error) {
-    console.error(error);
-    return;
-  }
-
-  wdepn_rate_tbl = d3.csv.parseRows(ratetab).map(row => {
+var bahPromise1 = d3.text("bahw23.txt").then((ratetab) => {
+  wdepn_rate_tbl = d3.csvParseRows(ratetab).map(row => {
+    // all cols but the first are numeric and need the +val.
     return row.map((val, i) => i ? +val : val);
   });
 
   console.log("loaded BAH w depn data, first row follows");
   console.dir(wdepn_rate_tbl[0]);
-  check_loading_banner();
 });
 
-d3.text("bahwo23.txt", (error, ratetab) => {
-  if(error) {
-    console.error(error);
-    return;
-  }
-
-  nodepn_rate_tbl = d3.csv.parseRows(ratetab).map(row => {
+var bahPromise2 = d3.text("bahwo23.txt").then((ratetab) => {
+  nodepn_rate_tbl = d3.csvParseRows(ratetab).map(row => {
+    // all cols but the first are numeric and need the +val.
     return row.map((val, i) => i ? +val : val);
   });
 
   console.log("loaded BAH w/o depn data, first row follows");
   console.dir(nodepn_rate_tbl[0]);
-  check_loading_banner();
 });
 
 d3.select(self.frameElement).style("height", height + "px");
+
+Promise.all([mapPromise, bahPromise1, bahPromise2]).then(() => {
+  console.log("All data loaded, removing loading banner");
+  remove_loading_banner();
+});
 
 </script>
 
