@@ -1,3 +1,17 @@
+# Ignore ZIP files containing source data
+BAH*.zip
+cb_*.zip
+
+# Ignore the data itself
+bah*.txt
+sorted*.txt
+cb_*.dbf
+cb_*.shp
+cb_*.shx
+us_*.json
+
+# Remaining stuff is from Github Node template for gitignore and is retained as-is
+
 # Logs
 logs
 *.log

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.state {
+  fill: #ccc;
+}
+
+.common_mha {
+  fill: #eee;
+}
+
+.state-boundary {
+/*  fill: none; */
+  stroke: #bbbcc3;
+  stroke-width: 0.5px;
+}
+
+.state.selected {
+  fill: orange;
+  stroke: #000;
+}
+
+.hovered {
+  fill: orange;
+}
+
+#mha_label {
+  font-size: 14pt;
+  font-family: "Linux Libertine O", "Lucida Sans", "Helvetica", "Arial", sans-serif;
+  text-align: center;
+  padding: 10pt;
+}
+
+</style>
+<body>
+<h1>BAH Rate Map, calendar year 2023</h1>
+
+<form>
+<fieldset>
+<label id="lbl_use_depn_check"> <input type="checkbox" id="use_depn_check">Use with-dependent rate</input></label>
+<br><br>
+<label id="lbl_paygrade">Paygrade to use <select id="paygrade">
+        <option value="0">E1</option>
+        <option value="1">E2</option>
+        <option value="2">E3</option>
+    </select></label>
+</fieldset>
+</form>
+
+<div id="loading_banner">
+<h2>Loading rate data...</h2>
+</div>
+
+<div id="mha_label">Hover the map to see</div>
+
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/topojson.v1.min.js"></script>
+<script>
+
+var width = 1080,
+    height = 800;
+
+var projection = d3.geo.albersUsa()
+    .scale(1400)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var scale = d3.scale.linear()
+    .domain([500, 5000])  // TODO: Set range based on input table.
+    .range(["gray", "#8F8"]);
+
+// We color-code based on selected paygrade and whether dependents are present
+// or not.  This is based on data that must be loaded separately as well, so
+// if the data hasn't loaded yet, use a null scale.
+
+var wdepn_rate_tbl = null;
+var nodepn_rate_tbl = null;
+var use_depns = false;
+var selected_rate_col = 0;
+var map_loaded = false;
+
+function updateRates()
+{
+  var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
+
+  // TODO Allow selectability
+
+  selected_rate_col = 3; // E3, hardcoded
+
+  console.log (`Joining to data table, first row is for ${rate_tbl[0][0]}`);
+  console.dir (rate_tbl[0]);
+  var new_rates = rate_tbl.map((row) => {
+    return { id: row[0], rate: row[selected_rate_col] };
+  });
+
+  svg.selectAll("path")
+    .data(new_rates, d => d.id)
+      .style("fill", d => scale(d.rate));
+}
+
+function check_loading_banner()
+{
+  if(map_loaded && wdepn_rate_tbl && nodepn_rate_tbl) {
+    d3.select("#loading_banner").remove();
+    console.log("All data loaded");
+    updateRates();
+  }
+}
+
+d3.json("us_dod_mha.topo.json", function(error, us) {
+  if (error) throw error;
+
+  var props = function(d) {
+    return d.id || d.properties.DOD_BAH_MHA;
+  }
+
+  var lastDivHovered = null;
+
+  var showMHA = function(mha_feature) {
+    var id = props(mha_feature);
+    var svg_id = '#path-' + id;
+    var hoverText = mha_feature.rate ? `${id}: \$${mha_feature.rate}` : id;
+
+    d3.select("#mha_label").text(hoverText);
+    d3.select(svg_id).classed("hovered", true);
+  };
+
+  var hideMHA = function(mha_feature) {
+    var id = props(mha_feature);
+    var svg_id = '#path-' + id;
+
+    d3.select("#mha_label").text('Hover to see');
+    d3.select(svg_id).classed("hovered", false);
+  };
+
+  var pickBG = function(mha_feature) {
+    var id = props(mha_feature);
+    if(id && id.startsWith("ZZ")) {
+      return "common_mha";
+    }
+    return "state";
+  }
+
+  svg.selectAll("path")
+      // the key function is important to match to rate data once that is loaded later
+      .data(topojson.feature(us, us.objects["us_dod_mha"]).features, d => props(d))
+    .enter()
+      .append("path")
+      .attr("id", d => `path-${props(d)}`)
+      .attr("class", d => pickBG(d))
+      .classed("state-boundary", true) // add on second class
+      .attr("d", path)
+      .on("mousemove", showMHA)
+      .on("mouseout", hideMHA);
+
+  map_loaded = true;
+  check_loading_banner();
+
+//  svg.append("path")
+//      .datum(topojson.mesh(us, us.objects.us_dod_mha, function(a, b) { return a !== b; }))
+//      .attr("class", "state-boundary")
+//      .attr("d", path);
+});
+
+// no header row, send request manually
+d3.text("bahw23.txt", (error, ratetab) => {
+  if(error) {
+    console.error(error);
+    return;
+  }
+
+  wdepn_rate_tbl = d3.csv.parseRows(ratetab).map(row => {
+    return row.map((val, i) => i ? +val : val);
+  });
+
+  console.log("loaded BAH w depn data, first row follows");
+  console.dir(wdepn_rate_tbl[0]);
+  check_loading_banner();
+});
+
+d3.text("bahwo23.txt", (error, ratetab) => {
+  if(error) {
+    console.error(error);
+    return;
+  }
+
+  nodepn_rate_tbl = d3.csv.parseRows(ratetab).map(row => {
+    return row.map((val, i) => i ? +val : val);
+  });
+
+  console.log("loaded BAH w/o depn data, first row follows");
+  console.dir(nodepn_rate_tbl[0]);
+  check_loading_banner();
+});
+
+d3.select(self.frameElement).style("height", height + "px");
+
+</script>
+
+<!-- Each row looks like
+AK400,2034.00,2034.00,2034.00,2034.00,2454.00,2472.00,2532.00,2625.00,2787.00,2475.00,2574.00,2688.00,2829.00,3000.00,2547.00,2667.00,2850.00,2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
+
+stored in separate files for BAH w/ dependents and w/out dependents.  Goes in order E1-E9, W1-CW5, O1E-O3E, then O1-O10.
+
+In the example above:
+AK400
+E1-E9   2034.00,2034.00,2034.00,2034.00,2454.00,2472.00,2532.00,2625.00,2787.00,
+W1-CW5  2475.00,2574.00,2688.00,2829.00,3000.00,
+O1E-O3E 2547.00,2667.00,2850.00,
+O1-O10  2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
+-->
