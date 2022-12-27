@@ -41,12 +41,12 @@
 <label id="lbl_use_depn_check"> <input type="checkbox" id="use_depn_check">Use with-dependent rate</input></label>
 <br><br>
 <label id="lbl_paygrade">Paygrade to use <select id="paygrade">
-        <option value="0">E1</option>
-        <option value="1">E2</option>
-        <option value="2">E3</option>
     </select></label>
 </fieldset>
 </form>
+
+<div id="rate_table">
+</div>
 
 <div id="loading_banner">
 <h2>Loading rate data...</h2>
@@ -82,15 +82,11 @@ var scale = d3.scaleSequential(d3.interpolateInferno)
 var wdepn_rate_tbl = null;
 var nodepn_rate_tbl = null;
 var use_depns = false;
-var selected_rate_col = 0;
+var selected_rate_col = 5; // E5 by default
 
 function updateRates()
 {
   var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
-
-  // TODO Allow selectability
-
-  selected_rate_col = 3; // E3, hardcoded
 
   console.log (`Joining to data table, first row is for ${rate_tbl[0][0]}`);
   console.dir (rate_tbl[0]);
@@ -191,6 +187,42 @@ Promise.all([mapPromise, bahPromise1, bahPromise2]).then(() => {
   remove_loading_banner();
 });
 
+// Create dropdown-list of paygrades
+
+var selectPaygradeList = d3.select('select#paygrade');
+var ranks = new Array();
+for(var i = 1; i <= 9; i++) {
+    ranks.push("E" + i);
+}
+for(var i = 1; i <= 5; i++) {
+    ranks.push("W" + i);
+}
+for(var i = 1; i <= 3; i++) {
+    ranks.push("O" + i + "E");
+}
+for(var i = 1; i <= 10; i++) {
+    ranks.push("O" + i);
+}
+
+selectPaygradeList.selectAll('option')
+    .data(ranks)
+  .enter()
+    .append('option')
+    .attr("value", (d, i) => i + 1)
+    .text(d => d)
+  .filter((d) => d == "E5")
+    .attr("selected", true);
+
+selectPaygradeList.on('change', function(ev, d) {
+    selected_rate_col = +this.value;
+    console.log (`Selected rate is ${selected_rate_col}`);
+    updateRates();
+});
+
+d3.select("#use_depn_check").on('change', function(ev, d) {
+    use_depns = this.checked;
+    updateRates();
+});
 </script>
 
 <!-- Each row looks like
@@ -201,7 +233,7 @@ stored in separate files for BAH w/ dependents and w/out dependents.  Goes in or
 In the example above:
 AK400
 E1-E9   2034.00,2034.00,2034.00,2034.00,2454.00,2472.00,2532.00,2625.00,2787.00,
-W1-CW5  2475.00,2574.00,2688.00,2829.00,3000.00,
+W1-W5   2475.00,2574.00,2688.00,2829.00,3000.00,
 O1E-O3E 2547.00,2667.00,2850.00,
 O1-O10  2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
 -->
