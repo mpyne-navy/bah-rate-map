@@ -87,7 +87,7 @@ var svg = d3.select("body").append("svg")
     .attr("height", height);
 
 var scale = d3.scaleSequential(d3.interpolateInferno)
-    .domain([500, 5000]);  // TODO: Set range based on input table.
+    .domain([500, 5000]); // Reset once data is loaded
 
 // We color-code based on selected paygrade and whether dependents are present
 // or not.  This is based on data that must be loaded separately as well, so
@@ -116,6 +116,23 @@ function updateRates()
 function remove_loading_banner()
 {
   d3.select("#loading_banner").remove();
+
+  let minRate = 99999999, maxRate = 0;
+
+  wdepn_rate_tbl.map((row) => {
+    const rowData = row.slice(1);
+    minRate = Math.min(minRate, d3.min(rowData));
+    maxRate = Math.max(maxRate, d3.max(rowData));
+  });
+  nodepn_rate_tbl.map((row) => {
+    const rowData = row.slice(1);
+    minRate = Math.min(minRate, d3.min(rowData));
+    maxRate = Math.max(maxRate, d3.max(rowData));
+  });
+
+  console.log(`Min rate is ${minRate}, max rate is ${maxRate}`);
+  scale.domain([minRate, maxRate]);
+
   updateRates();
 }
 
@@ -144,9 +161,6 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
       return;
     }
     rate_data = rate_data[0]; // We got an array back with all (1) result.
-
-    console.log(`Found rates for ${id}`);
-    console.dir(rate_data);
 
     var enl_row = rate_data.slice(1, 10);
     var war_row = rate_data.slice(10, 15);
