@@ -2,6 +2,20 @@
 <meta charset="utf-8">
 <style>
 
+div#rate_table > table {
+  font-family: 'Arial', sans-serif;
+  font-size: 9pt;
+  font-weight: 300;
+  border-collapse: collapse;
+  border: 1px solid gray;
+  margin:auto;
+}
+
+div#rate_table > table td {
+  border: 1px solid lightgray;
+  padding: 4pt;
+}
+
 .state {
   fill: #ccc;
 }
@@ -121,6 +135,30 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
 
     d3.select("#mha_label").text(hoverText);
     mha_feature.classed("hovered", true);
+
+    // Update table of all paygrade rates for this MHA
+    var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
+    var rate_data = rate_tbl.filter(row => row[0] == id);
+    if(rate_data.length != 1) {
+      console.error("Unable to find rates for MHA " + id);
+      return;
+    }
+    rate_data = rate_data[0]; // We got an array back with all (1) result.
+
+    console.log(`Found rates for ${id}`);
+    console.dir(rate_data);
+
+    var enl_row = rate_data.slice(1, 10);
+    var war_row = rate_data.slice(10, 15);
+    var pri_row = rate_data.slice(15, 18);
+    var off_row = rate_data.slice(18, 28);
+
+    d3.select("#rate_table table tbody")
+      .selectAll('tr')
+      .data([enl_row, war_row, pri_row, off_row])
+      .selectAll('td:not(:first-child)') // don't overwrite label
+      .data(d => d)
+      .text(d => d);
   };
 
   var hideMHA = function(ev, d) {
@@ -223,6 +261,46 @@ d3.select("#use_depn_check").on('change', function(ev, d) {
     use_depns = this.checked;
     updateRates();
 });
+
+// Build table of per-grade rates for the hovered MHA
+
+// 4x11 array of data (after head).
+var rate_table_rows = new Array;
+
+const row_labels = ['E1-E9', 'W1-W5', 'O1E-O3E', 'O1-O10'];
+for(const row_label of row_labels) {
+    var row_array = new Array(11);
+    row_array.fill(''); // 2nd cell until last reset by data-join
+    row_array[0] = row_label;
+    rate_table_rows.push(row_array);
+}
+
+// Header row, first cell will be reset by datajoin
+var header_row = [''];
+for(var i = 1; i <= 10; i++) {
+    header_row.push('PG' + i);
+}
+
+var table = d3.select("#rate_table").append('table');
+var table_head = table.append('thead').append('tr');
+table_head.selectAll('td')
+    .data(header_row)
+  .enter()
+    .append('td')
+    .text(d => d);
+
+var table_rows = table.append('tbody');
+var table_row = table_rows.selectAll('tr')
+    .data(rate_table_rows)
+  .enter()
+    .append('tr');
+
+table_row.selectAll('td')
+    .data(d => d)
+  .enter()
+    .append('td')
+    .text(d => d);
+
 </script>
 
 <!-- Each row looks like
