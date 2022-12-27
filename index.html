@@ -72,9 +72,8 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-var scale = d3.scaleLinear()
-    .domain([500, 5000])  // TODO: Set range based on input table.
-    .range(["gray", "#8F8"]);
+var scale = d3.scaleSequential(d3.interpolateInferno)
+    .domain([500, 5000]);  // TODO: Set range based on input table.
 
 // We color-code based on selected paygrade and whether dependents are present
 // or not.  This is based on data that must be loaded separately as well, so
