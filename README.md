@@ -11,6 +11,13 @@ It is very basic!  Mostly just here to automate the rules I struggled to put
 together over a weekend but I'm hopeful it can be filled in to make a useful
 web page later.
 
+## Online Demo
+
+[See a demo](https://mpyne-navy.github.io/bah-rate-map-demo/), this is not
+strictly live (I have to manually copy over files until I figure out how to
+cache Census / DoD data in a Github Action for a very long time) but is
+approximately current.
+
 # Product
 
 The final product is an index.html driving a [D3.js](https://d3js.org/)-based
