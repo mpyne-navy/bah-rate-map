@@ -143,7 +143,7 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
 
   var lastDivHovered = null;
 
-  var showMHA = function(ev, d) {
+  const showMHA = function(ev, d) {
     var mha_feature = d3.select(this);
     var mha_elem = mha_feature.datum();
     var id = props(mha_elem);
@@ -175,7 +175,7 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
       .text(d => d);
   };
 
-  var hideMHA = function(ev, d) {
+  const hideMHA = function(ev, d) {
     var mha_feature = d3.select(this);
     var mha_elem = mha_feature.datum();
     var id = props(mha_elem);
@@ -185,12 +185,17 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
     mha_feature.classed("hovered", false);
   };
 
-  var pickBG = function(mha_feature) {
+  const pickBG = function(mha_feature) {
     var id = props(mha_feature);
     if(id && id.startsWith("ZZ")) {
       return "common_mha";
     }
     return "state";
+  }
+
+  const mhaClicked = function(ev, d) {
+    console.log(`MHA clicked! datum: ${d}. HTML element:`);
+    console.dir(this);
   }
 
   svg.selectAll("path")
@@ -203,7 +208,8 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
       .classed("state-boundary", true) // add on second class
       .attr("d", path)
       .on("mousemove", showMHA)
-      .on("mouseout", hideMHA);
+      .on("mouseout", hideMHA)
+      .on("click", mhaClicked);
 
 //  svg.append("path")
 //      .datum(topojson.mesh(us, us.objects.us_dod_mha, function(a, b) { return a !== b; }))
