@@ -223,6 +223,11 @@ function embed_rates_into_map_mhas()
     d.depnRate   = depnRateMap  .get(d.id);
     d.nodepnRate = nodepnRateMap.get(d.id);
   });
+
+  svg.selectAll("path")
+    .filter(d => !d.depnRate || !d.nodepnRate)
+    .each(d => console.log(`Removing MHA ${d.id} without BAH rates`))
+    .remove();
 }
 
 // no header row, send request manually
