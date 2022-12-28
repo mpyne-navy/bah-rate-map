@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- vim: set sw=2: -->
 <meta charset="utf-8">
 <style>
 
@@ -99,19 +98,19 @@ var nodepn_rate_tbl = null;
 var use_depns = false;
 var selected_rate_col = 5; // E5 by default
 
-function updateRates()
+function update_rates()
 {
   var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
 
-  console.log (`Joining to data table, first row is for ${rate_tbl[0][0]}`);
-  console.dir (rate_tbl[0]);
-  var new_rates = rate_tbl.map((row) => {
-    return { id: row[0], rate: row[selected_rate_col] };
-  });
-
-  svg.selectAll("path")
-    .data(new_rates, d => d.id)
-      .style("fill", d => scale(d.rate));
+  if(use_depns) {
+    svg.selectAll("path[id]")
+      .filter(d => d.depnRate) // not all MHAs have rates?
+      .style("fill", d => scale(d.depnRate  [selected_rate_col]));
+  } else {
+    svg.selectAll("path[id]")
+      .filter(d => d.nodepnRate)
+      .style("fill", d => scale(d.nodepnRate[selected_rate_col]));
+  }
 }
 
 function remove_loading_banner()
@@ -133,21 +132,13 @@ function remove_loading_banner()
 
   console.log(`Min rate is ${minRate}, max rate is ${maxRate}`);
   scale.domain([minRate, maxRate]);
-
-  updateRates();
 }
 
 var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
-  var props = function(d) {
-    return d.id || d.properties.DOD_BAH_MHA;
-  }
-
-  var lastDivHovered = null;
-
   const showMHA = function(ev, d) {
     var mha_feature = d3.select(this);
     var mha_elem = mha_feature.datum();
-    var id = props(mha_elem);
+    var id = mha_elem.id;
     var svg_id = '#path-' + id;
     var hoverText = mha_elem.rate ? `${id}: \$${mha_elem.rate}` : id;
 
@@ -179,7 +170,7 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
   const hideMHA = function(ev, d) {
     var mha_feature = d3.select(this);
     var mha_elem = mha_feature.datum();
-    var id = props(mha_elem);
+    var id = mha_elem.id;
     var svg_id = '#path-' + id;
 
     d3.select("#mha_label").text('Hover to see');
@@ -187,7 +178,7 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
   };
 
   const pickBG = function(mha_feature) {
-    var id = props(mha_feature);
+    var id = mha_feature.id;
     if(id && id.startsWith("ZZ")) {
       return "common_mha";
     }
@@ -200,22 +191,16 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
   }
 
   svg.selectAll("path")
-      // the key function is important to match to rate data once that is loaded later
-      .data(topojson.feature(us, us.objects["us_dod_mha"]).features, d => props(d))
+      .data(topojson.feature(us, us.objects["us_dod_mha"]).features)
     .enter()
       .append("path")
-      .attr("id", d => `path-${props(d)}`)
+      .attr("id", d => `path-${d.properties.DOD_BAH_MHA}`)
       .attr("class", d => pickBG(d))
       .classed("state-boundary", true) // add on second class
       .attr("d", path)
       .on("mousemove", showMHA)
       .on("mouseout", hideMHA)
       .on("click", mhaClicked);
-
-//  svg.append("path")
-//      .datum(topojson.mesh(us, us.objects.us_dod_mha, function(a, b) { return a !== b; }))
-//      .attr("class", "state-boundary")
-//      .attr("d", path);
 });
 
 // Embeds BAH data into the datum for each SVG <path> entry showing an MHA, so
@@ -267,6 +252,7 @@ Promise.all([mapPromise, bahPromise1, bahPromise2]).then(() => {
   console.log("All data loaded, removing loading banner");
   remove_loading_banner();
   embed_rates_into_map_mhas();
+  update_rates();
 });
 
 // Create dropdown-list of paygrades
@@ -298,12 +284,12 @@ selectPaygradeList.selectAll('option')
 selectPaygradeList.on('change', function(ev, d) {
     selected_rate_col = +this.value;
     console.log (`Selected rate is ${selected_rate_col}`);
-    updateRates();
+    update_rates();
 });
 
 d3.select("#use_depn_check").on('change', function(ev, d) {
     use_depns = this.checked;
-    updateRates();
+    update_rates();
 });
 
 // Build table of per-grade rates for the hovered MHA
@@ -359,3 +345,4 @@ W1-W5   2475.00,2574.00,2688.00,2829.00,3000.00,
 O1E-O3E 2547.00,2667.00,2850.00,
 O1-O10  2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
 -->
+<!-- vim: set sw=2: -->
