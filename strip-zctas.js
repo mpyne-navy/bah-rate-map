@@ -1,6 +1,6 @@
 // Remove the embedded ZCTA objects that are left in by topojson-merge
 
-const fs = require('fs/promises');
+const fs = require('fs').promises;
 const process = require('process');
 const argv = process.argv;
 
