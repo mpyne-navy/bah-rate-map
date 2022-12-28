@@ -42,6 +42,8 @@ my $upd_count = 0; # count imputations we make for comparison
 
 say scalar @$obj_db, " objects in GEO DB";
 
+my %features_to_delete;
+
 for my $geometry (@$obj_db) {
     my $geoZCTA = $geometry->{properties}->{GEOID20}; # This is the 5-digit ZIP code as text
     my $mha = $used_zip_codes{$geoZCTA} // '';
@@ -50,8 +52,19 @@ for my $geometry (@$obj_db) {
         $upd_count++;
         delete $used_zip_codes{$geoZCTA}; # any used ZIP codes not listed at end have no ZCTA match
     } else {
-        say "GEO DB object $geoZCTA has no MHA match";
+        say "GEO DB object $geoZCTA has no MHA match and will be removed from the result";
+        $features_to_delete{$geoZCTA} = 1;
     }
+}
+
+# Filter out geometries that don't have a ZCTA to prevent errors later with
+# topomerge
+if (%features_to_delete) {
+    $geoDB->{objects}->{$TOPOJSON_ZCTA_LAYER}->{geometries} = [
+        grep { ! exists $features_to_delete{$_->{properties}->{GEOID20}} }
+        @{$geoDB->{objects}->{$TOPOJSON_ZCTA_LAYER}->{geometries}}
+        ];
+    say "Removed ", scalar keys %features_to_delete, " ZCTAs not part of any MHA";
 }
 
 say "Made $upd_count updates to the output GEO DB";
@@ -59,7 +72,7 @@ say "Made $upd_count updates to the output GEO DB";
 die "Something must have gone wrong, did a property name change like GEOID?"
     unless $upd_count > 0;
 
-say scalar keys %used_zip_codes, " ZIP codes not used in any ZCTA entry";
+say scalar keys %used_zip_codes, " ZIP codes have an MHA entry but have no ZCTA map geometry";
 my @non_fake_zips = grep { $used_zip_codes{$_} !~ /^ZZ/ } keys %used_zip_codes;
 say "\t of these, ", scalar @non_fake_zips, " were not artificial MHAs";
 
