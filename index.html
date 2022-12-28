@@ -135,12 +135,17 @@ function remove_loading_banner()
 }
 
 var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
+  const getRate = function(d) {
+    return use_depns
+        ? d.depnRate  [selected_rate_col]
+        : d.nodepnRate[selected_rate_col];
+  }
+
   const showMHA = function(ev, d) {
     var mha_feature = d3.select(this);
-    var mha_elem = mha_feature.datum();
-    var id = mha_elem.id;
+    var id = d.id;
     var svg_id = '#path-' + id;
-    var hoverText = mha_elem.rate ? `${id}: \$${mha_elem.rate}` : id;
+    var hoverText = `${id}: \$${getRate(d)}`;
 
     d3.select("#mha_label").text(hoverText);
     mha_feature.classed("hovered", true);
