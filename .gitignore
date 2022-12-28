@@ -10,6 +10,9 @@ cb_*.shp
 cb_*.shx
 us_*.json
 
+# Vim
+.*.swp
+
 # Remaining stuff is from Github Node template for gitignore and is retained as-is
 
 # Logs
