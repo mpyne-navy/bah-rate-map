@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- vim: set sw=2: -->
 <meta charset="utf-8">
 <style>
 
@@ -217,6 +218,28 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
 //      .attr("d", path);
 });
 
+// Embeds BAH data into the datum for each SVG <path> entry showing an MHA, so
+// that later rendering has the rate information it needs to update the
+// background.
+function embed_rates_into_map_mhas()
+{
+  var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
+
+  let depnRateMap = new Map(), nodepnRateMap = new Map();
+  for (const row of wdepn_rate_tbl) {
+    depnRateMap  .set(row[0], row.slice(1));
+  }
+  for (const row of nodepn_rate_tbl) {
+    nodepnRateMap.set(row[0], row.slice(1));
+  }
+
+  svg.selectAll("path").each((d) => {
+    // `this` is the <path> element, d is the data item
+    d.depnRate   = depnRateMap  .get(d.id);
+    d.nodepnRate = nodepnRateMap.get(d.id);
+  });
+}
+
 // no header row, send request manually
 var bahPromise1 = d3.text("bahw23.txt").then((ratetab) => {
   wdepn_rate_tbl = d3.csvParseRows(ratetab).map(row => {
@@ -243,6 +266,7 @@ d3.select(self.frameElement).style("height", height + "px");
 Promise.all([mapPromise, bahPromise1, bahPromise2]).then(() => {
   console.log("All data loaded, removing loading banner");
   remove_loading_banner();
+  embed_rates_into_map_mhas();
 });
 
 // Create dropdown-list of paygrades
