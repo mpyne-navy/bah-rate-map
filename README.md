@@ -66,6 +66,10 @@ need](#dependencies), then:
     * However if you have the "wget" tool you can let the "Make" command
       download this for you when it runs later, if you will have Internet
       access where "Make" runs.
+* Also Download the corresponding [2020 Census 5,000,000 (national)
+  shapefile](https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_all_5m.zip) and save it to the same place
+  you saved the ZCTA shapes. This is used to provide a national outline for where ZCTAs are not defined.
+    * Again, the Makefile will get this for you if you have 'wget' and Internet access.
 * Go to https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/
   and in the "All BAH Rates" section download the "ASCII" file type version of the
   BAH rates for the year you care about (2023 in my case). Save it to the same location
