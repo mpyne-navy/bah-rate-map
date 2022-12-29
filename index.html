@@ -1,18 +1,30 @@
 <!DOCTYPE html>
+<html>
+<head>
 <meta charset="utf-8">
+<title>DoD BAH Rates Viewer</title>
+<link rel="stylesheet" href="chota-2022-12.min.css">
 <style>
 
 div#rate_table > table {
   font-family: 'Arial', sans-serif;
   font-size: 9pt;
+  text-align: center;
+}
+
+div#rate_table > table > thead {
+  font-weight: bold;
+}
+
+div#rate_table > table > tbody {
   font-weight: 300;
-  border-collapse: collapse;
-  border: 1px solid gray;
-  margin:auto;
+}
+
+div#rate_table > table > tbody td:not(:first-child) {
+  border: 1px solid lightgray;
 }
 
 div#rate_table > table td {
-  border: 1px solid lightgray;
   padding: 4pt;
 }
 
@@ -46,33 +58,82 @@ div#rate_table > table td {
 }
 
 #mha_label {
-  font-size: 14pt;
-  font-family: "Linux Libertine O", "Lucida Sans", "Helvetica", "Arial", sans-serif;
+  font-size: 24pt;
+  font-family: "Lucida Sans", "Helvetica", "Arial", sans-serif;
   text-align: center;
-  padding: 10pt;
 }
 
 </style>
 <body>
-<h1>BAH Rate Map, calendar year 2023</h1>
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <h1>BAH Rate Map, calendar year 2023</h1>
+    </div>
+  </div>
 
-<form>
-<fieldset>
-<label id="lbl_use_depn_check"> <input type="checkbox" id="use_depn_check">Use with-dependent rate</input></label>
-<br><br>
-<label id="lbl_paygrade">Paygrade to use <select id="paygrade">
-    </select></label>
-</fieldset>
-</form>
+  <div class="row">
 
-<div id="rate_table">
-</div>
+    <div class="col-12 col-6-md">
+      <form>
+      <fieldset>
+        <legend>Rate Selection</legend>
+        <div>
+        <p>
+          <label id="lbl_paygrade">Paygrade to use <select id="paygrade">
+              </select></label>
+        </p>
+        <p>
+          <label id="lbl_use_depn_check"> <input type="checkbox" id="use_depn_check">Use with-dependent rate</input></label>
+        </p>
+      </fieldset>
+      </form>
+    </div>
 
-<div id="loading_banner">
-<h2>Loading rate data...</h2>
-</div>
+    <div class="col-12 col-6-md">
+      <!-- Each row in the BAH data CSV looks like
+      AK400,2034.00,2034.00,2034.00,2034.00,2454.00,2472.00,2532.00,2625.00,2787.00,2475.00,2574.00,2688.00,2829.00,3000.00,2547.00,2667.00,2850.00,2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
 
-<div id="mha_label">Hover the map to see</div>
+      There are 2 separate files, for BAH w/ dependents and w/out dependents.
+
+      Each row goes in order E1-E9, W1-CW5, O1E-O3E, then O1-O10.
+
+      In the example above:
+      AK400
+      E1-E9   2034.00,2034.00,2034.00,2034.00,2454.00,2472.00,2532.00,2625.00,2787.00,
+      W1-W5   2475.00,2574.00,2688.00,2829.00,3000.00,
+      O1E-O3E 2547.00,2667.00,2850.00,
+      O1-O10  2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
+      -->
+      <span class="is-center">Hover the map to select an&nbsp;<abbr title="Military Housing
+        Area">MHA</abbr></span>
+      <div id="rate_table">
+      </div>
+    </div>
+
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div id="mha_label">Hover the map to see</div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div id="loading_banner">
+        <h2>Loading rate data...</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col">
+      <div id="map_area"></div>
+    </div>
+  </div>
+
+</div> <!-- end of container -->
 
 <script src="https://d3js.org/d3.v7.min.js" charset="utf-8"></script>
 <script src="https://d3js.org/topojson.v1.min.js"></script>
@@ -88,7 +149,7 @@ var projection = d3.geoAlbersUsa()
 var path = d3.geoPath()
     .projection(projection);
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("#map_area").append("svg")
     .attr("width", width)
     .attr("height", height);
 
@@ -359,16 +420,6 @@ table_row.selectAll('td')
 
 </script>
 
-<!-- Each row looks like
-AK400,2034.00,2034.00,2034.00,2034.00,2454.00,2472.00,2532.00,2625.00,2787.00,2475.00,2574.00,2688.00,2829.00,3000.00,2547.00,2667.00,2850.00,2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
+</body></html>
 
-stored in separate files for BAH w/ dependents and w/out dependents.  Goes in order E1-E9, W1-CW5, O1E-O3E, then O1-O10.
-
-In the example above:
-AK400
-E1-E9   2034.00,2034.00,2034.00,2034.00,2454.00,2472.00,2532.00,2625.00,2787.00,
-W1-W5   2475.00,2574.00,2688.00,2829.00,3000.00,
-O1E-O3E 2547.00,2667.00,2850.00,
-O1-O10  2466.00,2469.00,2685.00,3057.00,3324.00,3351.00,3378.00,3378.00,3378.00,3378.00
--->
 <!-- vim: set sw=2: -->
