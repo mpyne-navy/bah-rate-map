@@ -103,12 +103,10 @@ function update_rates()
   var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
 
   if(use_depns) {
-    svg.selectAll("path[id]")
-      .filter(d => d.depnRate) // not all MHAs have rates?
+    svg.selectAll("path")
       .style("fill", d => scale(d.depnRate  [selected_rate_col]));
   } else {
-    svg.selectAll("path[id]")
-      .filter(d => d.nodepnRate)
+    svg.selectAll("path")
       .style("fill", d => scale(d.nodepnRate[selected_rate_col]));
   }
 }
@@ -242,8 +240,7 @@ var bahPromise1 = d3.text("bahw23.txt").then((ratetab) => {
     return row.map((val, i) => i ? +val : val);
   });
 
-  console.log("loaded BAH w depn data, first row follows");
-  console.dir(wdepn_rate_tbl[0]);
+  console.log("loaded BAH w depn data");
 });
 
 var bahPromise2 = d3.text("bahwo23.txt").then((ratetab) => {
@@ -252,8 +249,7 @@ var bahPromise2 = d3.text("bahwo23.txt").then((ratetab) => {
     return row.map((val, i) => i ? +val : val);
   });
 
-  console.log("loaded BAH w/o depn data, first row follows");
-  console.dir(nodepn_rate_tbl[0]);
+  console.log("loaded BAH w/o depn data");
 });
 
 d3.select(self.frameElement).style("height", height + "px");
