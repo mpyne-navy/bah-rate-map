@@ -25,8 +25,21 @@ div#rate_table > table > tbody td:not(:first-child) {
 }
 
 div#rate_table > table td {
-  padding: 4pt;
+  padding: 2pt;
 }
+
+td.current_rate_cell {
+  background: black;
+  color: white;
+}
+
+td#mha_label {
+  background: darkblue;
+  color: lightgreen;
+  font: monospace;
+  font-weight: bold;
+}
+
 
 .state {
   fill: #ccc;
@@ -149,6 +162,16 @@ var nodepn_rate_tbl = null;
 var use_depns = false;
 var selected_rate_col = 5; // E5 by default
 
+function update_rate_table()
+{
+  d3.selectAll('#rate_table tbody td:not(:first-child)')
+      .classed('current_rate_cell', false);
+
+  // will do nothing if no MHA has been hovered yet
+  d3.select('#rate-id-' + selected_rate_col)
+      .classed('current_rate_cell', true);
+}
+
 function update_rates()
 {
   var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
@@ -209,18 +232,26 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
     var war_row = rate_data.slice(10, 15);
     var pri_row = rate_data.slice(15, 18);
     var off_row = rate_data.slice(18, 28);
+    var rate_id_incr = 1;
 
     d3.select("#rate_table table tbody")
       .selectAll('tr')
       .data([enl_row, war_row, pri_row, off_row])
       .selectAll('td:not(:first-child)') // don't overwrite label
       .data(d => d)
+      .attr("id", d => 'rate-id-' + rate_id_incr++)
       .text(d => d);
+    update_rate_table();
   };
 
   const hideMHA = function(ev, d) {
     d3.select(this).style("fill", scale(getRate(d)));
-    d3.select('#mha_label').text('');
+    d3.select('#mha_label').text(' ');
+
+    // Clear out rate table
+    d3.selectAll('#rate_table tbody td:not(:first-child)')
+        .classed('current_rate_cell', false)
+        .text('');
   };
 
   const pickBG = function(mha_feature) {
@@ -317,6 +348,7 @@ Promise.all([mapPromise, bahPromise1, bahPromise2]).then(() => {
   remove_loading_banner();
   embed_rates_into_map_mhas();
   update_rates();
+  update_rate_table();
 });
 
 // Create dropdown-list of paygrades
@@ -348,11 +380,13 @@ selectPaygradeList.selectAll('option')
 selectPaygradeList.on('change', function(ev, d) {
     selected_rate_col = +this.value;
     console.log (`Selected rate is ${selected_rate_col}`);
+    update_rate_table();
     update_rates();
 });
 
 d3.select("#use_depn_check").on('change', function(ev, d) {
     use_depns = this.checked;
+    update_rate_table();
     update_rates();
 });
 
