@@ -39,8 +39,11 @@ us_dod_mha.topo.json: us_dod_mha-detail.topo.json $(TOPOQUANTIZE)
 us_dod_mha-detail.topo.json: us_dod_mha-detail-heavy.topo.json strip-zctas.js
 	node strip-zctas.js $< $@ us_zcta500.geo
 
-us_zcta500.topo.json: us_zcta500.geo.json $(GEO2TOPO)
-	$(GEO2TOPO) -o $@ $<
+us_zcta500.topo.json: us_zcta500.geo.json us_nation_5m.geo.json $(GEO2TOPO)
+	$(GEO2TOPO) -o $@ us_zcta500.geo=us_zcta500.geo.json us_nation=us_nation_5m.geo.json
+
+us_nation_5m.geo.json: cb_2020_us_nation_5m.shp cb_2020_us_nation_5m.shx cb_2020_us_nation_5m.dbf
+	ogr2ogr -f GeoJSON $@ $<
 
 us_zcta500.geo.json: cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf
 	ogr2ogr -f GeoJSON $@ $<
@@ -55,6 +58,16 @@ cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.
 
 cb_2020_us_zcta520_500k.zip:
 	wget https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_zcta520_500k.zip
+
+# We use the 5m scale nation outline because this doesn't need to be high fidelity
+cb_2020_us_nation_5m.zip: cb_2020_us_all_5m.zip
+	unzip -DD -n $< $@
+
+cb_2020_us_nation_5m.shp cb_2020_us_nation_5m.shx cb_2020_us_nation_5m.dbf: cb_2020_us_nation_5m.zip
+	unzip -DD -n $< $@
+
+cb_2020_us_all_5m.zip:
+	wget https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_all_5m.zip
 
 # BAH MHA data
 sorted_zipmha23.txt bahw23.txt bahwo23.txt: BAH-ASCII-2023.zip

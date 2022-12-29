@@ -24,10 +24,16 @@ div#rate_table > table td {
   fill: #eee;
 }
 
-.state-boundary {
+.nation-boundary {
+  stroke: black;
+  stroke-width: 1.5px;
+  fill: lightgray;
+}
+
+.mha-boundary {
 /*  fill: none; */
   stroke: #bbbcc3;
-  stroke-width: 0.5px;
+  stroke-width: 0.2px;
 }
 
 .state.selected {
@@ -86,7 +92,7 @@ var svg = d3.select("body").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-var scale = d3.scaleSequential(d3.interpolateInferno)
+var scale = d3.scaleSequential(d3.interpolateTurbo)
     .domain([500, 5000]); // Reset once data is loaded
 
 // We color-code based on selected paygrade and whether dependents are present
@@ -102,12 +108,11 @@ function update_rates()
 {
   var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
 
+  var mha_paths = svg.selectAll("path.mha-boundary");
   if(use_depns) {
-    svg.selectAll("path")
-      .style("fill", d => scale(d.depnRate  [selected_rate_col]));
+    mha_paths.style("fill", d => scale(d.depnRate  [selected_rate_col]));
   } else {
-    svg.selectAll("path")
-      .style("fill", d => scale(d.nodepnRate[selected_rate_col]));
+    mha_paths.style("fill", d => scale(d.nodepnRate[selected_rate_col]));
   }
 }
 
@@ -193,13 +198,24 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
     console.dir(this);
   }
 
-  svg.selectAll("path")
+  // nation outline first
+  svg.append("g")
+      .attr("id", "nation-outline")
+    .selectAll("path")
+      .data(topojson.feature(us, us.objects["us_nation"]).features)
+    .enter()
+      .append("path")
+      .classed("nation-boundary", true)
+      .attr("d", path);
+
+  // Add MHAs as an overlay, being careful not to alter the existing nation outline <path>
+  svg.selectAll("path.mha-boundary")
       .data(topojson.feature(us, us.objects["us_dod_mha"]).features)
     .enter()
       .append("path")
       .attr("id", d => `path-${d.properties.DOD_BAH_MHA}`)
       .attr("class", d => pickBG(d))
-      .classed("state-boundary", true) // add on second class
+      .classed("mha-boundary", true) // add on second class
       .attr("d", path)
       .on("mousemove", showMHA)
       .on("mouseout", hideMHA)
@@ -221,13 +237,17 @@ function embed_rates_into_map_mhas()
     nodepnRateMap.set(row[0], row.slice(1));
   }
 
-  svg.selectAll("path").each((d) => {
+  var paths = svg.selectAll("path.mha-boundary");
+
+  console.log(`Embedding rates into ${paths.size()} paths`);
+
+  paths.each((d) => {
     // `this` is the <path> element, d is the data item
     d.depnRate   = depnRateMap  .get(d.id);
     d.nodepnRate = nodepnRateMap.get(d.id);
   });
 
-  svg.selectAll("path")
+  paths
     .filter(d => !d.depnRate || !d.nodepnRate)
     .each(d => console.log(`Removing MHA ${d.id} without BAH rates`))
     .remove();
