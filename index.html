@@ -53,16 +53,6 @@ div#rate_table > table td {
   stroke: #000;
 }
 
-.hovered {
-  fill: orange;
-}
-
-#mha_label {
-  font-size: 24pt;
-  font-family: "Lucida Sans", "Helvetica", "Arial", sans-serif;
-  text-align: center;
-}
-
 </style>
 <body>
 <div class="container">
@@ -111,12 +101,6 @@ div#rate_table > table td {
       </div>
     </div>
 
-  </div>
-
-  <div class="row">
-    <div class="col">
-      <div id="mha_label">Hover the map to see</div>
-    </div>
   </div>
 
   <div class="row">
@@ -208,11 +192,9 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
   const showMHA = function(ev, d) {
     var mha_feature = d3.select(this);
     var id = d.id;
-    var svg_id = '#path-' + id;
-    var hoverText = `${id}: \$${getRate(d)}`;
 
-    d3.select("#mha_label").text(hoverText);
-    mha_feature.classed("hovered", true);
+    d3.select("#mha_label").text(id);
+    mha_feature.style("fill", "orange");
 
     // Update table of all paygrade rates for this MHA
     var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
@@ -237,13 +219,8 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
   };
 
   const hideMHA = function(ev, d) {
-    var mha_feature = d3.select(this);
-    var mha_elem = mha_feature.datum();
-    var id = mha_elem.id;
-    var svg_id = '#path-' + id;
-
-    d3.select("#mha_label").text('Hover to see');
-    mha_feature.classed("hovered", false);
+    d3.select(this).style("fill", scale(getRate(d)));
+    d3.select('#mha_label').text('');
   };
 
   const pickBG = function(mha_feature) {
@@ -405,6 +382,9 @@ table_head.selectAll('td')
   .enter()
     .append('td')
     .text(d => d);
+
+// Give first header cell an HTML ID to find it in hover handler
+table_head.select('td').attr('id', 'mha_label');
 
 var table_rows = table.append('tbody');
 var table_row = table_rows.selectAll('tr')
