@@ -300,10 +300,10 @@ function embed_rates_into_map_mhas()
 
   let depnRateMap = new Map(), nodepnRateMap = new Map();
   for (const row of wdepn_rate_tbl) {
-    depnRateMap  .set(row[0], row.slice(1));
+    depnRateMap  .set(row[0], row);
   }
   for (const row of nodepn_rate_tbl) {
-    nodepnRateMap.set(row[0], row.slice(1));
+    nodepnRateMap.set(row[0], row);
   }
 
   var paths = svg.selectAll("path.mha-boundary");
