@@ -161,6 +161,7 @@ var wdepn_rate_tbl = null;
 var nodepn_rate_tbl = null;
 var use_depns = false;
 var selected_rate_col = 5; // E5 by default
+var activeHoverTimer = null;
 
 function update_rate_table()
 {
@@ -212,8 +213,8 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
         : d.nodepnRate[selected_rate_col];
   }
 
-  const showMHA = function(ev, d) {
-    var mha_feature = d3.select(this);
+  const showMHA = function(elem, d) {
+    var mha_feature = d3.select(elem);
     var id = d.id;
 
     d3.select("#mha_label").text(id);
@@ -241,7 +242,9 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
       .data(d => d)
       .attr("id", d => 'rate-id-' + rate_id_incr++)
       .text(d => d);
+
     update_rate_table();
+    activeHoverTimer = null;
   };
 
   const hideMHA = function(ev, d) {
@@ -252,6 +255,11 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
     d3.selectAll('#rate_table tbody td:not(:first-child)')
         .classed('current_rate_cell', false)
         .text('');
+
+    if(activeHoverTimer) {
+      clearTimeout(activeHoverTimer);
+      activeHoverTimer = null;
+    }
   };
 
   const pickBG = function(mha_feature) {
@@ -286,7 +294,12 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
       .attr("class", d => pickBG(d))
       .classed("mha-boundary", true) // add on second class
       .attr("d", path)
-      .on("mousemove", showMHA)
+      .on("mousemove", function (ev, d) {
+        if(activeHoverTimer) {
+          clearTimeout(activeHoverTimer);
+        }
+        activeHoverTimer = setTimeout(showMHA, 15, this, d);
+      })
       .on("mouseout", hideMHA)
       .on("click", mhaClicked);
 });
