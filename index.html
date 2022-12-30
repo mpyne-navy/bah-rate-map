@@ -40,7 +40,6 @@ td#mha_label {
   font-weight: bold;
 }
 
-
 .state {
   fill: #ccc;
 }
@@ -66,7 +65,13 @@ td#mha_label {
   stroke: #000;
 }
 
+path.zoomed {
+  stroke-width: 3px;
+  stroke: black;
+}
+
 </style>
+
 <body>
 <div class="container">
   <div class="row">
@@ -144,6 +149,7 @@ var projection = d3.geoAlbersUsa()
     .translate([width / 2, height / 2]);
 
 var path = d3.geoPath()
+    .digits(1) // reduce complexity of generated shapes
     .projection(projection);
 
 var svg = d3.select("#map_area").append("svg")
@@ -153,14 +159,12 @@ var svg = d3.select("#map_area").append("svg")
 var scale = d3.scaleSequential(d3.interpolateTurbo)
     .domain([500, 5000]); // Reset once data is loaded
 
-// We color-code based on selected paygrade and whether dependents are present
-// or not.  This is based on data that must be loaded separately as well, so
-// if the data hasn't loaded yet, use a null scale.
-
+var mha_topology = null; // MHA geo features loaded later
 var wdepn_rate_tbl = null;
 var nodepn_rate_tbl = null;
 var use_depns = false;
 var selected_rate_col = 5; // E5 by default
+var zoomed_in = false;
 var activeHoverTimer = null;
 
 function update_rate_table()
@@ -183,6 +187,16 @@ function update_rates()
   } else {
     mha_paths.style("fill", d => scale(d.nodepnRate[selected_rate_col]));
   }
+}
+
+function redraw_map()
+{
+  console.log("Redrawing SVG map");
+
+  // The MHAs are already present as SVG <path> elements, update their
+  // rendered paths but without making other changes.
+  svg.selectAll("path")
+      .attr("d", path);
 }
 
 function remove_loading_banner()
@@ -271,8 +285,38 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
   }
 
   const mhaClicked = function(ev, d) {
-    console.log(`MHA clicked! datum: ${d}. HTML element:`);
-    console.dir(this);
+    console.log(`MHA clicked! datum: ${d.id}`);
+
+    if(zoomed_in) {
+      projection
+        .scale(1400)
+        .translate([width / 2, height / 2]);
+      redraw_map();
+      zoomed_in = false;
+      d3.select('.zoomed').classed('zoomed', false);
+      return;
+    }
+
+    // check for common MHAs which cover the whole country, no point zooming into this
+    if (d.id.startsWith("ZZ")) {
+      console.log("Skipping zoom on this MHA as it is a common MHA");
+      return;
+    }
+
+    // object clicked, zoom into it
+
+    const MHAs = mha_topology.objects["us_dod_mha"];
+    const mhaGeometries = topojson.feature(mha_topology, MHAs).features;
+    const selectedMHAGeo = mhaGeometries.find(mha => mha.properties.DOD_BAH_MHA == d.id);
+
+    if(selectedMHAGeo) {
+      projection.fitExtent([[75, 75], [width - 75, height - 75]], selectedMHAGeo);
+      d3.select('#path-' + d.id).classed('zoomed', true);
+      redraw_map();
+      zoomed_in = true;
+    } else {
+      console.error(`Couldn't find map data corresponding to ${d.id}!`);
+    }
   }
 
   // nation outline first
@@ -285,9 +329,11 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
       .classed("nation-boundary", true)
       .attr("d", path);
 
+  mha_topology = us;
+
   // Add MHAs as an overlay, being careful not to alter the existing nation outline <path>
   svg.selectAll("path.mha-boundary")
-      .data(topojson.feature(us, us.objects["us_dod_mha"]).features)
+      .data(topojson.feature(mha_topology, mha_topology.objects["us_dod_mha"]).features)
     .enter()
       .append("path")
       .attr("id", d => `path-${d.properties.DOD_BAH_MHA}`)
