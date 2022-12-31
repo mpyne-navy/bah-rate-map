@@ -9,7 +9,7 @@ my %used_zip_codes;
 
 my $INPUT_NAME  = $ARGV[0] or die usage();
 my $OUTPUT_NAME = $ARGV[1] or die usage();
-my $TOPOJSON_ZCTA_LAYER = "us_zcta500.geo"; # change if you change layer name in TopoJSON input
+my $TOPOJSON_ZCTA_LAYER = "us_zcta"; # change if you change layer name in TopoJSON input
 
 # Load BAH ZIP-code-to-MHA-assignment data
 {
