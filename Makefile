@@ -35,11 +35,11 @@ serve: index.html us_dod_mha.topo.json bahwo23.txt bahw23.txt
 #
 
 # We build the final result by 'quantizing' the detailed topological data to
-# reduce file size by aligning coordinates onto a grid.  The 2000 number
-# gives 2,000 possible values per axis and seems to give a good balance
+# reduce file size by aligning coordinates onto a grid.  The 10,000 number
+# gives 10,000 possible values per axis and seems to give a good balance
 # between quality and file size.
 us_dod_mha.topo.json: us_dod_mha-detail.topo.json $(TOPOQUANTIZE)
-	$(TOPOQUANTIZE) -o $@ 2000 $<
+	$(TOPOQUANTIZE) -o $@ 10000 $<
 
 # BAH MHA data, which is downloaded directly by the client Javascript which
 # merges with the MHA map data on the client-side.
