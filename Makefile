@@ -95,14 +95,12 @@ us_nation_5m.geo.json: cb_2020_us_nation_5m.shp cb_2020_us_nation_5m.shx cb_2020
 us_zcta520.geo.json: cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf
 	ogr2ogr -f GeoJSON $@ $<
 
-# The next two rules extract the "shapefile" data from the ZIP files provided
-# by U.S. Census Bureau website.
-# TODO: Turn this into a make pattern rule.
-cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf: cb_2020_us_zcta520_500k.zip
-	unzip -DD -n $< $@
-
-cb_2020_us_nation_5m.shp cb_2020_us_nation_5m.shx cb_2020_us_nation_5m.dbf: cb_2020_us_nation_5m.zip
-	unzip -DD -n $< $@
+# This rule defines to make how to extra the "shapefile" data from a provided
+# ZIP file from U.S. Census (as used as prereqs in the .geo.json rules above).
+# It is then implicitly used by make as long as there is a rule to bring in the
+# ZIP file (see below).
+%.shp %.shx %.dbf: %.zip
+	unzip -DD -n $< $*.shp $*.shx $*.dbf
 
 # The next three rules are used to download the needed ZIP files from Census
 # Bureau website. The nation data is not available directly but is pulled from
