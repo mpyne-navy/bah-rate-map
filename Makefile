@@ -21,6 +21,7 @@ IMPUTE_RATES=./impute-rates.pl
 
 # This is the generated file that we serve to users. Two other files are served as-is.
 all: us_dod_mha.topo.json
+	@echo "us_dod_mha.topo.json size: " $$(stat -c %s us_dod_mha.topo.json)
 
 # Local web server, accessible at http://localhost:8000/
 serve: index.html us_dod_mha.topo.json bahwo23.txt bahw23.txt
@@ -74,7 +75,7 @@ us_zcta-wbah-simplified.topo.json: us_zcta-simplified.topo.json sorted_zipmha23.
 # pass early on to reduce the complexity of the map data to reduce effort in
 # later computation steps.
 us_zcta-simplified.topo.json: us_zcta.topo.json $(TOPOSIMPLIFY)
-	$(TOPOSIMPLIFY) -o $@ -F -P 0.02 $<
+	$(TOPOSIMPLIFY) -o $@ -F -p 0.001 $<
 
 # We convert the input GeoJSON data into a smaller "TopoJSON" format that
 # shares data for common borders between geographic features. The JavaScript on
