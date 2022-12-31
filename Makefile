@@ -82,21 +82,17 @@ us_zcta-simplified.topo.json: us_zcta.topo.json $(TOPOSIMPLIFY)
 # GeoJSON allows us to combine 2 GeoJSON files into one TopoJSON output file
 # (separate layers), which we take advantage of to include a U.S. nation map
 # overlay.
-us_zcta.topo.json: us_zcta520.geo.json us_nation_5m.geo.json $(GEO2TOPO)
-	$(GEO2TOPO) -o $@ us_zcta=us_zcta520.geo.json us_nation=us_nation_5m.geo.json
+us_zcta.topo.json: us_zcta520_500k.geo.json us_nation_5m.geo.json $(GEO2TOPO)
+	$(GEO2TOPO) -o $@ us_zcta=us_zcta520_500k.geo.json us_nation=us_nation_5m.geo.json
 
-# The next two rules use GDAL's ogr2ogr to convert the U.S. Census Bureau's
-# "shapefile" format geographic features (U.S. nation outline and ZCTAs) into
-# GeoJSON data which we can process the rest of the way.
-# TODO: Turn this into a make pattern rule.
-us_nation_5m.geo.json: cb_2020_us_nation_5m.shp cb_2020_us_nation_5m.shx cb_2020_us_nation_5m.dbf
+# This rule defines how to turn "shapefile" data into GeoJSON by using GDAL's
+# ogr2ogr.  Three specific files are needed from the ZIP data. This pattern is
+# used implicitly for nation-level data and ZCTA data (via the rule above).
+%.geo.json: cb_2020_%.shp cb_2020_%.shx cb_2020_%.dbf
 	ogr2ogr -f GeoJSON $@ $<
 
-us_zcta520.geo.json: cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf
-	ogr2ogr -f GeoJSON $@ $<
-
-# This rule defines to make how to extra the "shapefile" data from a provided
-# ZIP file from U.S. Census (as used as prereqs in the .geo.json rules above).
+# This rule defines to make how to extract the "shapefile" data from a provided
+# ZIP file from U.S. Census (as used as prereqs in the .geo.json rule above).
 # It is then implicitly used by make as long as there is a rule to bring in the
 # ZIP file (see below).
 %.shp %.shx %.dbf: %.zip
