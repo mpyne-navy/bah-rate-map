@@ -307,7 +307,7 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
 
     const MHAs = mha_topology.objects["us_dod_mha"];
     const mhaGeometries = topojson.feature(mha_topology, MHAs).features;
-    const selectedMHAGeo = mhaGeometries.find(mha => mha.properties.DOD_BAH_MHA == d.id);
+    const selectedMHAGeo = mhaGeometries.find(mha => mha.id == d.id);
 
     if(selectedMHAGeo) {
       projection.fitExtent([[75, 75], [width - 75, height - 75]], selectedMHAGeo);
@@ -336,7 +336,7 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
       .data(topojson.feature(mha_topology, mha_topology.objects["us_dod_mha"]).features)
     .enter()
       .append("path")
-      .attr("id", d => `path-${d.properties.DOD_BAH_MHA}`)
+      .attr("id", d => `path-${d.id}`)
       .attr("class", d => pickBG(d))
       .classed("mha-boundary", true) // add on second class
       .attr("d", path)

@@ -16,6 +16,14 @@ async function mainWork() {
     await fs.readFile(argv[2]).then((data) => {
         const topoJson = JSON.parse(data);
         delete topoJson.objects[argv[4]];
+
+        // topomerge mapped the key to the 'id' field so we no longer need 'properties'
+        const newGeos = topoJson.objects.us_dod_mha.geometries.map((feature) => {
+            delete feature.properties;
+            return feature;
+        });
+        topoJson.objects.us_dod_mha.geometries = newGeos;
+
         objToWrite = topoJson;
     });
 
