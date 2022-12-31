@@ -60,20 +60,20 @@ us_dod_mha-detail.topo.json: us_dod_mha-detail-heavy.topo.json strip-zctas.js
 # The merge step creates a new TopoJSON object in the output file containing
 # ZCTAs merged into their corresponding MHAs, and retains the old layer. We'll
 # strip the old data later.
-us_dod_mha-detail-heavy.topo.json: us_zcta500-wbah-simplified.topo.json $(TOPOMERGE)
+us_dod_mha-detail-heavy.topo.json: us_zcta520-wbah-simplified.topo.json $(TOPOMERGE)
 	$(TOPOMERGE) us_dod_mha=us_zcta -o $@ -k 'd.properties.DOD_BAH_MHA' $<
 
 # Once we've simplified the input data to reduce file size (and therefore
 # processing time to handle), we go ahead and add MHA assignments to ZCTA
 # geographic features, where there is an MHA defined. We use an auxiliary
 # script for this.
-us_zcta500-wbah-simplified.topo.json: us_zcta500-simplified.topo.json sorted_zipmha23.txt $(IMPUTE_RATES)
+us_zcta520-wbah-simplified.topo.json: us_zcta520-simplified.topo.json sorted_zipmha23.txt $(IMPUTE_RATES)
 	$(IMPUTE_RATES) $< $@
 
 # The U.S. ZCTA TopoJSON is still quite heavyweight. We run a simplification
 # pass early on to reduce the complexity of the map data to reduce effort in
 # later computation steps.
-us_zcta500-simplified.topo.json: us_zcta500.topo.json $(TOPOSIMPLIFY)
+us_zcta520-simplified.topo.json: us_zcta520.topo.json $(TOPOSIMPLIFY)
 	$(TOPOSIMPLIFY) -o $@ -F -P 0.02 $<
 
 # We convert the input GeoJSON data into a smaller "TopoJSON" format that
@@ -82,8 +82,8 @@ us_zcta500-simplified.topo.json: us_zcta500.topo.json $(TOPOSIMPLIFY)
 # GeoJSON allows us to combine 2 GeoJSON files into one TopoJSON output file
 # (separate layers), which we take advantage of to include a U.S. nation map
 # overlay.
-us_zcta500.topo.json: us_zcta500.geo.json us_nation_5m.geo.json $(GEO2TOPO)
-	$(GEO2TOPO) -o $@ us_zcta=us_zcta500.geo.json us_nation=us_nation_5m.geo.json
+us_zcta520.topo.json: us_zcta520.geo.json us_nation_5m.geo.json $(GEO2TOPO)
+	$(GEO2TOPO) -o $@ us_zcta=us_zcta520.geo.json us_nation=us_nation_5m.geo.json
 
 # The next two rules use GDAL's ogr2ogr to convert the U.S. Census Bureau's
 # "shapefile" format geographic features (U.S. nation outline and ZCTAs) into
@@ -92,7 +92,7 @@ us_zcta500.topo.json: us_zcta500.geo.json us_nation_5m.geo.json $(GEO2TOPO)
 us_nation_5m.geo.json: cb_2020_us_nation_5m.shp cb_2020_us_nation_5m.shx cb_2020_us_nation_5m.dbf
 	ogr2ogr -f GeoJSON $@ $<
 
-us_zcta500.geo.json: cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf
+us_zcta520.geo.json: cb_2020_us_zcta520_500k.shp cb_2020_us_zcta520_500k.shx cb_2020_us_zcta520_500k.dbf
 	ogr2ogr -f GeoJSON $@ $<
 
 # The next two rules extract the "shapefile" data from the ZIP files provided
