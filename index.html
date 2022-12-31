@@ -33,6 +33,10 @@ td.current_rate_cell {
   color: white;
 }
 
+nav {
+  padding-bottom: 6pt; /* chota doesn't seem to have much padding here */
+}
+
 td#mha_label {
   background: darkblue;
   color: lightgreen;
@@ -80,7 +84,12 @@ path.zoomed {
     </div>
   </div>
 
-  <div class="row">
+  <nav class="tabs is-full" id="tab-navbar">
+    <a class="active" id="tab-rate">Rate Information</a>
+    <a id="tab-debug">Debug</a>
+  </nav>
+
+  <div class="row" id="tab-page-rate">
 
     <div class="col-12 col-6-md">
       <form>
@@ -118,6 +127,22 @@ path.zoomed {
       <div id="rate_table">
       </div>
     </div>
+  </div>
+
+  <div class="row is-hidden" id="tab-page-debug">
+    <div class="col-12">
+      <label>Simplification Amount (percentile to keep)
+        <input type="range" id="simplify_threshold" list="simplify-marks" min="0.1" max="1.0" step="0.1">
+      </label>
+      <datalist id="simplify_marks">
+        <option value="0.1">
+        <option value="0.3">
+        <option value="0.5">
+        <option value="0.7">
+        <option value="0.9">
+        <option value="1.0"
+      </datalist>
+    </div>
 
   </div>
 
@@ -138,7 +163,7 @@ path.zoomed {
 </div> <!-- end of container -->
 
 <script src="https://d3js.org/d3.v7.min.js" charset="utf-8"></script>
-<script src="https://d3js.org/topojson.v1.min.js"></script>
+<script src="https://d3js.org/topojson.v3.min.js"></script>
 <script>
 
 var width = 1080,
@@ -189,6 +214,13 @@ function update_rates()
   }
 }
 
+function get_rate(d)
+{
+  return use_depns
+      ? d.depnRate  [selected_rate_col]
+      : d.nodepnRate[selected_rate_col];
+}
+
 function redraw_map()
 {
   console.log("Redrawing SVG map");
@@ -197,6 +229,115 @@ function redraw_map()
   // rendered paths but without making other changes.
   svg.selectAll("path")
       .attr("d", path);
+}
+
+function generate_map_join(geoData)
+{
+  // Add MHAs as an overlay, being careful not to alter the existing nation outline <path>
+  svg.selectAll("path.mha-boundary")
+      .data(geoData, d => d.id)
+      .join(enter => enter.append("path")
+        .on("mousemove", function (ev, d) {
+          if(activeHoverTimer) {
+            clearTimeout(activeHoverTimer);
+          }
+          activeHoverTimer = setTimeout(showMHA, 15, this, d);
+        })
+        .on("mouseout", hideMHA)
+        .on("click", mhaClicked))
+      // All the following apply to existing and new elements
+      .attr("d", path) // regenerate for existing elements
+      .attr("id", d => `path-${d.id}`)
+      .attr("class", d => d.id.startsWith("ZZ") ? 'common_mha' : 'state')
+      .classed("mha-boundary", true) // "class" will overwrite, re-add
+      ;
+}
+
+function showMHA(elem, d)
+{
+  var mha_feature = d3.select(elem);
+  var id = d.id;
+
+  d3.select("#mha_label").text(id);
+  mha_feature.style("fill", "orange");
+
+  // Update table of all paygrade rates for this MHA
+  var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
+  var rate_data = rate_tbl.filter(row => row[0] == id);
+  if(rate_data.length != 1) {
+    console.error("Unable to find rates for MHA " + id);
+    return;
+  }
+  rate_data = rate_data[0]; // We got an array back with all (1) result.
+
+  var enl_row = rate_data.slice(1, 10);
+  var war_row = rate_data.slice(10, 15);
+  var pri_row = rate_data.slice(15, 18);
+  var off_row = rate_data.slice(18, 28);
+  var rate_id_incr = 1;
+
+  d3.select("#rate_table table tbody")
+    .selectAll('tr')
+    .data([enl_row, war_row, pri_row, off_row])
+    .selectAll('td:not(:first-child)') // don't overwrite label
+    .data(d => d)
+    .attr("id", d => 'rate-id-' + rate_id_incr++)
+    .text(d => d);
+
+  update_rate_table();
+  activeHoverTimer = null;
+};
+
+function hideMHA(ev, d)
+{
+  d3.select(ev.target).style("fill", scale(get_rate(d)));
+  d3.select('#mha_label').text(' ');
+
+  // Clear out rate table
+  d3.selectAll('#rate_table tbody td:not(:first-child)')
+      .classed('current_rate_cell', false)
+      .text('');
+
+  if(activeHoverTimer) {
+    clearTimeout(activeHoverTimer);
+    activeHoverTimer = null;
+  }
+}
+
+function mhaClicked(ev, d)
+{
+  console.log(`MHA clicked! datum: ${d.id}`);
+
+  if(zoomed_in) {
+    projection
+      .scale(1400)
+      .translate([width / 2, height / 2]);
+    redraw_map();
+    zoomed_in = false;
+    d3.select('.zoomed').classed('zoomed', false);
+    return;
+  }
+
+  // check for common MHAs which cover the whole country, no point zooming into this
+  if (d.id.startsWith("ZZ")) {
+    console.log("Skipping zoom on this MHA as it is a common MHA");
+    return;
+  }
+
+  // object clicked, zoom into it
+
+  const MHAs = mha_topology.objects["us_dod_mha"];
+  const mhaGeometries = topojson.feature(mha_topology, MHAs).features;
+  const selectedMHAGeo = mhaGeometries.find(mha => mha.id == d.id);
+
+  if(selectedMHAGeo) {
+    projection.fitExtent([[75, 75], [width - 75, height - 75]], selectedMHAGeo);
+    d3.select('#path-' + d.id).classed('zoomed', true);
+    redraw_map();
+    zoomed_in = true;
+  } else {
+    console.error(`Couldn't find map data corresponding to ${d.id}!`);
+  }
 }
 
 function remove_loading_banner()
@@ -221,103 +362,6 @@ function remove_loading_banner()
 }
 
 var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
-  const getRate = function(d) {
-    return use_depns
-        ? d.depnRate  [selected_rate_col]
-        : d.nodepnRate[selected_rate_col];
-  }
-
-  const showMHA = function(elem, d) {
-    var mha_feature = d3.select(elem);
-    var id = d.id;
-
-    d3.select("#mha_label").text(id);
-    mha_feature.style("fill", "orange");
-
-    // Update table of all paygrade rates for this MHA
-    var rate_tbl = use_depns ? wdepn_rate_tbl : nodepn_rate_tbl;
-    var rate_data = rate_tbl.filter(row => row[0] == id);
-    if(rate_data.length != 1) {
-      console.error("Unable to find rates for MHA " + id);
-      return;
-    }
-    rate_data = rate_data[0]; // We got an array back with all (1) result.
-
-    var enl_row = rate_data.slice(1, 10);
-    var war_row = rate_data.slice(10, 15);
-    var pri_row = rate_data.slice(15, 18);
-    var off_row = rate_data.slice(18, 28);
-    var rate_id_incr = 1;
-
-    d3.select("#rate_table table tbody")
-      .selectAll('tr')
-      .data([enl_row, war_row, pri_row, off_row])
-      .selectAll('td:not(:first-child)') // don't overwrite label
-      .data(d => d)
-      .attr("id", d => 'rate-id-' + rate_id_incr++)
-      .text(d => d);
-
-    update_rate_table();
-    activeHoverTimer = null;
-  };
-
-  const hideMHA = function(ev, d) {
-    d3.select(this).style("fill", scale(getRate(d)));
-    d3.select('#mha_label').text(' ');
-
-    // Clear out rate table
-    d3.selectAll('#rate_table tbody td:not(:first-child)')
-        .classed('current_rate_cell', false)
-        .text('');
-
-    if(activeHoverTimer) {
-      clearTimeout(activeHoverTimer);
-      activeHoverTimer = null;
-    }
-  };
-
-  const pickBG = function(mha_feature) {
-    var id = mha_feature.id;
-    if(id && id.startsWith("ZZ")) {
-      return "common_mha";
-    }
-    return "state";
-  }
-
-  const mhaClicked = function(ev, d) {
-    console.log(`MHA clicked! datum: ${d.id}`);
-
-    if(zoomed_in) {
-      projection
-        .scale(1400)
-        .translate([width / 2, height / 2]);
-      redraw_map();
-      zoomed_in = false;
-      d3.select('.zoomed').classed('zoomed', false);
-      return;
-    }
-
-    // check for common MHAs which cover the whole country, no point zooming into this
-    if (d.id.startsWith("ZZ")) {
-      console.log("Skipping zoom on this MHA as it is a common MHA");
-      return;
-    }
-
-    // object clicked, zoom into it
-
-    const MHAs = mha_topology.objects["us_dod_mha"];
-    const mhaGeometries = topojson.feature(mha_topology, MHAs).features;
-    const selectedMHAGeo = mhaGeometries.find(mha => mha.id == d.id);
-
-    if(selectedMHAGeo) {
-      projection.fitExtent([[75, 75], [width - 75, height - 75]], selectedMHAGeo);
-      d3.select('#path-' + d.id).classed('zoomed', true);
-      redraw_map();
-      zoomed_in = true;
-    } else {
-      console.error(`Couldn't find map data corresponding to ${d.id}!`);
-    }
-  }
 
   // nation outline first
   svg.append("g")
@@ -331,23 +375,7 @@ var mapPromise = d3.json("us_dod_mha.topo.json").then((us) => {
 
   mha_topology = us;
 
-  // Add MHAs as an overlay, being careful not to alter the existing nation outline <path>
-  svg.selectAll("path.mha-boundary")
-      .data(topojson.feature(mha_topology, mha_topology.objects["us_dod_mha"]).features)
-    .enter()
-      .append("path")
-      .attr("id", d => `path-${d.id}`)
-      .attr("class", d => pickBG(d))
-      .classed("mha-boundary", true) // add on second class
-      .attr("d", path)
-      .on("mousemove", function (ev, d) {
-        if(activeHoverTimer) {
-          clearTimeout(activeHoverTimer);
-        }
-        activeHoverTimer = setTimeout(showMHA, 15, this, d);
-      })
-      .on("mouseout", hideMHA)
-      .on("click", mhaClicked);
+  generate_map_join(topojson.feature(mha_topology, mha_topology.objects["us_dod_mha"]).features);
 });
 
 // Embeds BAH data into the datum for each SVG <path> entry showing an MHA, so
@@ -490,6 +518,40 @@ table_row.selectAll('td')
   .enter()
     .append('td')
     .text(d => d);
+
+d3.select('#simplify_threshold')
+  .on('change', (ev, d) => {
+    console.log(`Simplifying to ${ev.target.value} percentile`);
+
+    let new_topology = topojson.presimplify(mha_topology);
+    new_topology = topojson.simplify(new_topology,
+        topojson.quantile(new_topology, ev.target.value));
+    new_topology = topojson.filter(new_topology, topojson.filterAttached(new_topology));
+    const topotext = JSON.stringify(new_topology);
+    console.log(`Resulting topology JSON size: ${topotext.length}`);
+
+    // Rejoin to MHAs since the <path> d attributes will have changed
+    generate_map_join(topojson.feature(new_topology, new_topology.objects.us_dod_mha).features);
+    embed_rates_into_map_mhas();
+    update_rates();
+  });
+
+// Tab handling
+const show_tab = (tabName) => {
+  console.log("Showing " + tabName + " tab");
+  d3.selectAll('div[id^=tab-page]').classed('is-hidden', true);
+  d3.select('div#tab-page-' + tabName).classed('is-hidden', false);
+  d3.selectAll('nav#tab-navbar > a').classed('active', false);
+  d3.select('a#tab-' + tabName).classed('active', true);
+}
+
+d3.select('#tab-debug').on('click', (ev, d) => {
+  show_tab('debug');
+});
+
+d3.select('#tab-rate').on('click', (ev, d) => {
+  show_tab('rate');
+});
 
 </script>
 
