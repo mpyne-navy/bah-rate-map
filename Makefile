@@ -5,11 +5,8 @@
 #   * ogr2ogr (from GDAL),
 #   * Perl interpreter installed
 #   * Python3 installed (if you want "make serve" to work)
-# You must download cb_2020_us_zcta520_500k.zip from U.S. Census Bureau,
-#   https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_zcta520_500k.zip
-#   (the Makefile will download it if you have wget)
-# You must download DoD BAH Rates for 2023 (in ASCII file type).
-#   (see https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/)
+#   * wget command line tool (to download needed ZIP files for Census and DOD
+#     BAH Rate data)
 
 TOPOMERGE=./node_modules/topojson-client/bin/topomerge
 TOPOQUANTIZE=./node_modules/topojson-client/bin/topoquantize
@@ -111,6 +108,9 @@ cb_2020_us_nation_5m.zip: cb_2020_us_all_5m.zip
 
 cb_2020_us_all_5m.zip:
 	wget https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_all_5m.zip
+
+BAH-ASCII-2023.zip:
+	wget https://www.travel.dod.mil/Portals/119/Documents/BAH/BAH_Rates_All_Locations_All_Pay_Grades/ASCII/BAH-ASCII-2023.zip
 
 # Finally, the NPM rule ensures that needed Node packages are installed to be
 # used by Make. To add new packages you need to update the package.json

@@ -60,30 +60,18 @@ before hand.
 To do this, first make sure you [have the dependencies you
 need](#dependencies), then:
 
-* Download [the 2020 Census ZCTA data](https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_zcta520_500k.zip)
-  and save it into the directory you downloaded this repository to. These are
-  the Census ZCTA shapes we will process.
-    * However if you have the "wget" tool you can let the "Make" command
-      download this for you when it runs later, if you will have Internet
-      access where "Make" runs.
-* Also Download the corresponding [2020 Census 5,000,000 (national)
-  shapefile](https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_all_5m.zip) and save it to the same place
-  you saved the ZCTA shapes. This is used to provide a national outline for where ZCTAs are not defined.
-    * Again, the Makefile will get this for you if you have 'wget' and Internet access.
-* Go to https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/
-  and in the "All BAH Rates" section download the "ASCII" file type version of the
-  BAH rates for the year you care about (2023 in my case). Save it to the same location
-  you saved the Census ZCTA data to. This is the DoD MHA BAH rate data which the
-  web page will use almost as-is.
 * Open a command line terminal pointing to the directory you have downloaded
   this repository to.
+* __Ensure you have the [right dependencies](#dependencies) installed__
 * From within the command line, run `make`.
-* Make will do several things. Assuming you have all the dependencies, make will
-  install some small NPM packages to do topography handling, extract the data
-  from the ZIP files you downloaded, and then run the NPM packages to process and simplify
-  the data into a form the index.html can use.
+* Make install some small NPM packages to do topography handling, download the ZIP
+  files with the data we need, extract the data from those ZIPs, and then run
+  the NPM packages to process and simplify the data into a form the index.html
+  can use.
     * Make will probably take a lot of time running `ogr2ogr` to start. This is expected, the
       Census data is quite large.
+    * If you run make with the `-j` option to allow paralell build steps,
+      nothing should break but you may see it run NPM install multiple times.
 * Assuming Make completes without error, you should be able to run `make serve` and then
   open a browser to http://localhost:8000/ to see the live map!
 
@@ -94,12 +82,25 @@ local web server to see the results:
 
 * [NodeJS](https://nodejs.org/)
 * Make (likely available in your Linux distribution already)
-* Wget (likely available in your Linux distribution already; optional to download Census data)
+* Wget (likely available in your Linux distribution already; downloads needed Census and DoD BAH data)
 * Unzip (likely available in your Linux distribution already, provided by InfoZIP)
 * [Perl](https://www.perl.org/) (to copy over MHA data into the geographic data... will be rewritten later to use Python or NodeJS).
 * [Python](https://www.python.org/) (if you want to run `make serve`). It's probably already on your Linux install.
 * [GDAL](https://gdal.org/index.html#), which provides the ogr2ogr tool needed to convert the Census data to a usable format.
 * Other scripts are needed but will be downloaded by Make using NodeJS, and installed only in this repository directory.
+
+## Data Sources
+
+Although the Makefile will download the data for you, it is good to know where the data comes from.
+
+* Census data comes from the [U.S. Census Bureau Cartographic Boundary Files
+collection for
+2020](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.2020.html#list-tab-QFC6PETHGC959AMV57),
+which is the latest year containing the required ZCTA information.
+* DoD BAH rate data and MHA-to-ZIP-code assignments come from the U.S. Defense
+* Travel Management Office's
+  [BAH rate website](https://www.travel.dod.mil/Allowances/Basic-Allowance-for-Housing/BAH-Rate-Lookup/).
+
 
 # Author
 
