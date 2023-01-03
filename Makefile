@@ -3,7 +3,6 @@
 #   * NodeJS,
 #   * unzip command line tool,
 #   * ogr2ogr (from GDAL),
-#   * Perl interpreter installed
 #   * Python3 installed (if you want "make serve" to work)
 #   * wget command line tool (to download needed ZIP files for Census and DOD
 #     BAH Rate data)
@@ -12,7 +11,6 @@ TOPOMERGE=./node_modules/topojson-client/bin/topomerge
 TOPOQUANTIZE=./node_modules/topojson-client/bin/topoquantize
 TOPOSIMPLIFY=./node_modules/topojson-simplify/bin/toposimplify
 GEO2TOPO=./node_modules/topojson-server/bin/geo2topo
-IMPUTE_RATES=./impute-rates.pl
 
 .PHONY: all serve clean
 
@@ -65,8 +63,8 @@ us_dod_mha-detail-heavy.topo.json: us_zcta-wbah-simplified.topo.json $(TOPOMERGE
 # processing time to handle), we go ahead and add MHA assignments to ZCTA
 # geographic features, where there is an MHA defined. We use an auxiliary
 # script for this.
-us_zcta-wbah-simplified.topo.json: us_zcta-simplified.topo.json sorted_zipmha23.txt $(IMPUTE_RATES)
-	$(IMPUTE_RATES) $< $@
+us_zcta-wbah-simplified.topo.json: us_zcta-simplified.topo.json sorted_zipmha23.txt impute-rates.js
+	node impute-rates.js $< $@
 
 # The U.S. ZCTA TopoJSON is still quite heavyweight. We run a simplification
 # pass early on to reduce the complexity of the map data to reduce effort in

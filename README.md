@@ -84,7 +84,6 @@ local web server to see the results:
 * Make (likely available in your Linux distribution already)
 * Wget (likely available in your Linux distribution already; downloads needed Census and DoD BAH data)
 * Unzip (likely available in your Linux distribution already, provided by InfoZIP)
-* [Perl](https://www.perl.org/) (to copy over MHA data into the geographic data... will be rewritten later to use Python or NodeJS).
 * [Python](https://www.python.org/) (if you want to run `make serve`). It's probably already on your Linux install.
 * [GDAL](https://gdal.org/index.html#), which provides the ogr2ogr tool needed to convert the Census data to a usable format.
 * Other scripts are needed but will be downloaded by Make using NodeJS, and installed only in this repository directory.
