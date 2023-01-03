@@ -10,26 +10,18 @@ if (argv.length != 5) {
     return 1;
 }
 
-let objToWrite;
-
 async function mainWork() {
-    await fs.readFile(argv[2]).then((data) => {
-        const topoJson = JSON.parse(data);
-        delete topoJson.objects[argv[4]];
+    const topoJson = await fs.readFile(argv[2]);
+    let topoData = JSON.parse(topoJson);
+    delete topoData.objects[argv[4]];
 
-        // topomerge mapped the key to the 'id' field so we no longer need 'properties'
-        const newGeos = topoJson.objects.us_dod_mha.geometries.map((feature) => {
-            delete feature.properties;
-            return feature;
-        });
-        topoJson.objects.us_dod_mha.geometries = newGeos;
+    // topomerge mapped the key to the 'id' field so we no longer need 'properties'
+    for (let feature of topoData.objects.us_dod_mha.geometries) {
+        delete feature.properties;
+    };
 
-        objToWrite = topoJson;
-    });
-
-    await fs.writeFile(argv[3], JSON.stringify(objToWrite)).then((done) => {
-        console.log(`${argv[4]} removed`);
-    });
+    await fs.writeFile(argv[3], JSON.stringify(topoData));
+    console.log(`${argv[4]} removed`);
 };
 
 mainWork();
